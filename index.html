@@ -93,49 +93,8 @@
 <p>This will generate the path with summary, tags, parameters and a response with schema defined. It also recursively generates definitions from your case class.<br>
 This works fine if you using a simple <code>Json.format[CardCreated]</code> to generate the json response out of this class. If not, you will have to write the definition yourself in the base swagger spec and reference it here at the endpoint. </p>
 
-<p>The result swagger specs will look like:</p>
-
-<div class="highlight highlight-source-json"><pre>{
-  <span class="pl-s"><span class="pl-pds">"</span>tags<span class="pl-pds">"</span></span> : [ { <span class="pl-s"><span class="pl-pds">"</span>name<span class="pl-pds">"</span></span>: <span class="pl-s"><span class="pl-pds">"</span>cards<span class="pl-pds">"</span></span> } ],
-  <span class="pl-s"><span class="pl-pds">"</span>path<span class="pl-pds">"</span></span> : {
-    <span class="pl-s"><span class="pl-pds">"</span>/api/cards/users/:profileId/contexts/:contextName/cards<span class="pl-pds">"</span></span> : {
-      <span class="pl-s"><span class="pl-pds">"</span>post<span class="pl-pds">"</span></span>: {
-        <span class="pl-s"><span class="pl-pds">"</span>tags<span class="pl-pds">"</span></span>: [ <span class="pl-s"><span class="pl-pds">"</span>cards<span class="pl-pds">"</span></span> ],
-        <span class="pl-s"><span class="pl-pds">"</span>summary<span class="pl-pds">"</span></span>: <span class="pl-s"><span class="pl-pds">"</span>create a card<span class="pl-pds">"</span></span>,
-        <span class="pl-s"><span class="pl-pds">"</span>parameters<span class="pl-pds">"</span></span>: [
-          {<span class="pl-s"><span class="pl-pds">"</span>name<span class="pl-pds">"</span></span> : <span class="pl-s"><span class="pl-pds">"</span>profileId<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>type<span class="pl-pds">"</span></span>:<span class="pl-s"><span class="pl-pds">"</span>integer<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>format<span class="pl-pds">"</span></span>:<span class="pl-s"><span class="pl-pds">"</span>int32<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>required<span class="pl-pds">"</span></span>:<span class="pl-c1">true</span>, <span class="pl-s"><span class="pl-pds">"</span>in<span class="pl-pds">"</span></span> : <span class="pl-s"><span class="pl-pds">"</span>path<span class="pl-pds">"</span></span> },
-          {<span class="pl-s"><span class="pl-pds">"</span>name<span class="pl-pds">"</span></span> : <span class="pl-s"><span class="pl-pds">"</span>contextName<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>type<span class="pl-pds">"</span></span>:<span class="pl-s"><span class="pl-pds">"</span>string<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>required<span class="pl-pds">"</span></span>:<span class="pl-c1">false</span>, <span class="pl-s"><span class="pl-pds">"</span>in<span class="pl-pds">"</span></span> : <span class="pl-s"><span class="pl-pds">"</span>path<span class="pl-pds">"</span></span> }
-        ], 
-        <span class="pl-s"><span class="pl-pds">"</span>responses<span class="pl-pds">"</span></span>: {
-          <span class="pl-s"><span class="pl-pds">"</span>200<span class="pl-pds">"</span></span>: {
-            <span class="pl-s"><span class="pl-pds">"</span>schema<span class="pl-pds">"</span></span>: {
-              <span class="pl-s"><span class="pl-pds">"</span>$ref<span class="pl-pds">"</span></span>: <span class="pl-s"><span class="pl-pds">"</span>#/definitions/com.iheart.poweramp.api.abtest.service.Protocol.TestCreated<span class="pl-pds">"</span></span>
-            }
-          }
-        }
-      }
-    }
-  },
-
-  <span class="pl-s"><span class="pl-pds">"</span>definitions<span class="pl-pds">"</span></span> : {
-    <span class="pl-s"><span class="pl-pds">"</span>com.iheart.api.Protocol.Card<span class="pl-pds">"</span></span>: {
-      <span class="pl-s"><span class="pl-pds">"</span>properties<span class="pl-pds">"</span></span> : {
-        <span class="pl-s"><span class="pl-pds">"</span>id<span class="pl-pds">"</span></span> : { <span class="pl-s"><span class="pl-pds">"</span>type<span class="pl-pds">"</span></span> : <span class="pl-s"><span class="pl-pds">"</span>integer<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>format<span class="pl-pds">"</span></span> : <span class="pl-s"><span class="pl-pds">"</span>int32<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>required<span class="pl-pds">"</span></span> : <span class="pl-c1">true</span> },
-        <span class="pl-s"><span class="pl-pds">"</span>name<span class="pl-pds">"</span></span> : { <span class="pl-s"><span class="pl-pds">"</span>type<span class="pl-pds">"</span></span> : <span class="pl-s"><span class="pl-pds">"</span>string<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>required<span class="pl-pds">"</span></span> : <span class="pl-c1">true</span> }
-      },
-      <span class="pl-s"><span class="pl-pds">"</span>required<span class="pl-pds">"</span></span>: [<span class="pl-s"><span class="pl-pds">"</span>name<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>id<span class="pl-pds">"</span></span>]
-    },
-    <span class="pl-s"><span class="pl-pds">"</span>com.iheart.api.Protocol.CardCreated<span class="pl-pds">"</span></span> : {
-      <span class="pl-s"><span class="pl-pds">"</span>properties<span class="pl-pds">"</span></span> : {
-        <span class="pl-s"><span class="pl-pds">"</span>card<span class="pl-pds">"</span></span> : {
-          <span class="pl-s"><span class="pl-pds">"</span>schema<span class="pl-pds">"</span></span> : {
-            <span class="pl-s"><span class="pl-pds">"</span>$ref<span class="pl-pds">"</span></span>: <span class="pl-s"><span class="pl-pds">"</span>#/definitions/com.iheart.api.Protocol.Card<span class="pl-pds">"</span></span>
-           },
-          <span class="pl-s"><span class="pl-pds">"</span>required<span class="pl-pds">"</span></span> : <span class="pl-c1">true</span> 
-        }
-      },
-      <span class="pl-s"><span class="pl-pds">"</span>required<span class="pl-pds">"</span></span>: [<span class="pl-s"><span class="pl-pds">"</span>card<span class="pl-pds">"</span></span>]
-    }</pre></div>
+<p>The result swagger specs will look like:
+  <img src="https://c2.staticflickr.com/6/5780/21599722125_971979b489_b.jpg" alt=""></p>
 
 <h4>
 <a id="how-to-override" class="anchor" href="#how-to-override" aria-hidden="true"><span class="octicon octicon-link"></span></a>How to override?</h4>
