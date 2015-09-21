@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link href='https://fonts.googleapis.com/css?family=Architects+Daughter' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/github-light.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print">
+
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <title>Play-swagger by iheartradio</title>
+  </head>
+
+  <body>
+    <header>
+      <div class="inner">
+        <h1>Play-swagger</h1>
+        <h2>Swagger spec generator for play framework</h2>
+        <a href="https://github.com/iheartradio/play-swagger" class="button"><small>View project on</small> GitHub</a>
+      </div>
+    </header>
+
+    <div id="content-wrapper">
+      <div class="inner clearfix">
+        <section id="main-content">
+          <h1>
+<a id="swagger-api-spec-generator-for-play" class="anchor" href="#swagger-api-spec-generator-for-play" aria-hidden="true"><span class="octicon octicon-link"></span></a>Swagger API spec generator for Play</h1>
+
+<p>A library that generates swagger specs from route files and case class reflection, no code annotation needed.  </p>
+
+<h2>
+<a id="principles-in-this-lib" class="anchor" href="#principles-in-this-lib" aria-hidden="true"><span class="octicon octicon-link"></span></a>Principles in this lib</h2>
+
+<ol>
+<li>No code pollution (e.g. annotation) </li>
+<li>DRY (extract as much information from the code as possible)</li>
+<li>When documenting an endpoint, it should be just swagger specification that you need to write. You shall not need to learn another API or spec format.<br>
+</li>
+</ol>
+
+<p>Which translates to </p>
+
+<ol>
+<li>Write your <a href="http://swagger.io/specification/">swagger specification</a> in your routes files as comments (json or yml)</li>
+<li>Reference your case classes in your swagger spec and play-swagger will generate definitions</li>
+<li>Override anything in either the swagger spec in comment or the base swagger spec file (swagger.yml or swagger.json in your conf)</li>
+</ol>
+
+<h1></h1>
+
+<h2>
+<a id="day-to-day-usage" class="anchor" href="#day-to-day-usage" aria-hidden="true"><span class="octicon octicon-link"></span></a>Day-to-day usage</h2>
+
+<h4>
+<a id="an-simple-example" class="anchor" href="#an-simple-example" aria-hidden="true"><span class="octicon octicon-link"></span></a>An simple example</h4>
+
+<p>In a <code>cards.routes</code> which is referenced in <code>routes</code> as </p>
+
+<pre><code>-&gt;  /api/cards    cards.Routes
+</code></pre>
+
+<p>You write the following swagger spec in comment. This example is in yml, you can write json if you prefer</p>
+
+<pre><code> ###
+ #  summary: create a card 
+ #  responses:
+ #    200:
+ #      description: success
+ #      schema:
+ #        $ref: '#/definitions/com.iheart.api.Protocol.CardCreated'
+ ###
+ POST      /users/:profileId/contexts/:contextName/cards       controllers.api.Cards.createCard(profileId: Int, contextName: Option[String])
+
+</code></pre>
+
+<p>Note that everything in the comment is just standard swagger definition, and it $refs to a case class CardCreated, which is defined in a Protocol object, and it references another case class Card. Here is the source code:</p>
+
+<div class="highlight highlight-source-scala"><pre><span class="pl-k">package</span> <span class="pl-en">com.iheart.api</span>
+
+<span class="pl-k">object</span> <span class="pl-en">Protocol</span> {
+  <span class="pl-k">case</span> <span class="pl-k">class</span> <span class="pl-en">CardCreated</span>(<span class="pl-v">card</span>: <span class="pl-en">Card</span>)
+
+  <span class="pl-k">case</span> <span class="pl-k">class</span> <span class="pl-en">Card</span>(<span class="pl-v">id</span>: <span class="pl-k">Int</span>, <span class="pl-v">name</span>: <span class="pl-k">String</span>)
+}</pre></div>
+
+<p>This will generate the path with summary, tags, parameters and a response with schema defined. It also recursively generates definitions from your case class.<br>
+This works fine if you using a simple <code>Json.format[CardCreated]</code> to generate the json response out of this class. If not, you will have to write the definition yourself in the base swagger spec and reference it here at the endpoint. </p>
+
+<p>The result swagger specs will look like:</p>
+
+<div class="highlight highlight-source-json"><pre>{
+  <span class="pl-s"><span class="pl-pds">"</span>tags<span class="pl-pds">"</span></span> : [ { <span class="pl-s"><span class="pl-pds">"</span>name<span class="pl-pds">"</span></span>: <span class="pl-s"><span class="pl-pds">"</span>cards<span class="pl-pds">"</span></span> } ],
+  <span class="pl-s"><span class="pl-pds">"</span>path<span class="pl-pds">"</span></span> : {
+    <span class="pl-s"><span class="pl-pds">"</span>/api/cards/users/:profileId/contexts/:contextName/cards<span class="pl-pds">"</span></span> : {
+      <span class="pl-s"><span class="pl-pds">"</span>post<span class="pl-pds">"</span></span>: {
+        <span class="pl-s"><span class="pl-pds">"</span>tags<span class="pl-pds">"</span></span>: [ <span class="pl-s"><span class="pl-pds">"</span>cards<span class="pl-pds">"</span></span> ],
+        <span class="pl-s"><span class="pl-pds">"</span>summary<span class="pl-pds">"</span></span>: <span class="pl-s"><span class="pl-pds">"</span>create a card<span class="pl-pds">"</span></span>,
+        <span class="pl-s"><span class="pl-pds">"</span>parameters<span class="pl-pds">"</span></span>: [
+          {<span class="pl-s"><span class="pl-pds">"</span>name<span class="pl-pds">"</span></span> : <span class="pl-s"><span class="pl-pds">"</span>profileId<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>type<span class="pl-pds">"</span></span>:<span class="pl-s"><span class="pl-pds">"</span>integer<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>format<span class="pl-pds">"</span></span>:<span class="pl-s"><span class="pl-pds">"</span>int32<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>required<span class="pl-pds">"</span></span>:<span class="pl-c1">true</span>, <span class="pl-s"><span class="pl-pds">"</span>in<span class="pl-pds">"</span></span> : <span class="pl-s"><span class="pl-pds">"</span>path<span class="pl-pds">"</span></span> },
+          {<span class="pl-s"><span class="pl-pds">"</span>name<span class="pl-pds">"</span></span> : <span class="pl-s"><span class="pl-pds">"</span>contextName<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>type<span class="pl-pds">"</span></span>:<span class="pl-s"><span class="pl-pds">"</span>string<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>required<span class="pl-pds">"</span></span>:<span class="pl-c1">false</span>, <span class="pl-s"><span class="pl-pds">"</span>in<span class="pl-pds">"</span></span> : <span class="pl-s"><span class="pl-pds">"</span>path<span class="pl-pds">"</span></span> }
+        ], 
+        <span class="pl-s"><span class="pl-pds">"</span>responses<span class="pl-pds">"</span></span>: {
+          <span class="pl-s"><span class="pl-pds">"</span>200<span class="pl-pds">"</span></span>: {
+            <span class="pl-s"><span class="pl-pds">"</span>schema<span class="pl-pds">"</span></span>: {
+              <span class="pl-s"><span class="pl-pds">"</span>$ref<span class="pl-pds">"</span></span>: <span class="pl-s"><span class="pl-pds">"</span>#/definitions/com.iheart.poweramp.api.abtest.service.Protocol.TestCreated<span class="pl-pds">"</span></span>
+            }
+          }
+        }
+      }
+    }
+  },
+
+  <span class="pl-s"><span class="pl-pds">"</span>definitions<span class="pl-pds">"</span></span> : {
+    <span class="pl-s"><span class="pl-pds">"</span>com.iheart.api.Protocol.Card<span class="pl-pds">"</span></span>: {
+      <span class="pl-s"><span class="pl-pds">"</span>properties<span class="pl-pds">"</span></span> : {
+        <span class="pl-s"><span class="pl-pds">"</span>id<span class="pl-pds">"</span></span> : { <span class="pl-s"><span class="pl-pds">"</span>type<span class="pl-pds">"</span></span> : <span class="pl-s"><span class="pl-pds">"</span>integer<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>format<span class="pl-pds">"</span></span> : <span class="pl-s"><span class="pl-pds">"</span>int32<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>required<span class="pl-pds">"</span></span> : <span class="pl-c1">true</span> },
+        <span class="pl-s"><span class="pl-pds">"</span>name<span class="pl-pds">"</span></span> : { <span class="pl-s"><span class="pl-pds">"</span>type<span class="pl-pds">"</span></span> : <span class="pl-s"><span class="pl-pds">"</span>string<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>required<span class="pl-pds">"</span></span> : <span class="pl-c1">true</span> }
+      },
+      <span class="pl-s"><span class="pl-pds">"</span>required<span class="pl-pds">"</span></span>: [<span class="pl-s"><span class="pl-pds">"</span>name<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>id<span class="pl-pds">"</span></span>]
+    },
+    <span class="pl-s"><span class="pl-pds">"</span>com.iheart.api.Protocol.CardCreated<span class="pl-pds">"</span></span> : {
+      <span class="pl-s"><span class="pl-pds">"</span>properties<span class="pl-pds">"</span></span> : {
+        <span class="pl-s"><span class="pl-pds">"</span>card<span class="pl-pds">"</span></span> : {
+          <span class="pl-s"><span class="pl-pds">"</span>schema<span class="pl-pds">"</span></span> : {
+            <span class="pl-s"><span class="pl-pds">"</span>$ref<span class="pl-pds">"</span></span>: <span class="pl-s"><span class="pl-pds">"</span>#/definitions/com.iheart.api.Protocol.Card<span class="pl-pds">"</span></span>
+           },
+          <span class="pl-s"><span class="pl-pds">"</span>required<span class="pl-pds">"</span></span> : <span class="pl-c1">true</span> 
+        }
+      },
+      <span class="pl-s"><span class="pl-pds">"</span>required<span class="pl-pds">"</span></span>: [<span class="pl-s"><span class="pl-pds">"</span>card<span class="pl-pds">"</span></span>]
+    }</pre></div>
+
+<h4>
+<a id="how-to-override" class="anchor" href="#how-to-override" aria-hidden="true"><span class="octicon octicon-link"></span></a>How to override?</h4>
+
+<p>To override any of the automatically generated field, you just need to write the same part in your comment or base swagger sepc file. </p>
+
+<h4>
+<a id="how-to-hide-an-endpoint" class="anchor" href="#how-to-hide-an-endpoint" aria-hidden="true"><span class="octicon octicon-link"></span></a>How to hide an endpoint?</h4>
+
+<p>If you don't want an end point to be included, add <code>### NoDocs ###</code> in front of it 
+e.g.</p>
+
+<pre><code>### NoDocs ###
+GET   /docs/swagger-ui/*file        controllers.Assets.at(path:String="/public/lib/swagger-ui", file:String)
+</code></pre>
+
+<h4>
+<a id="how-to-specify-body-content-in-a-post" class="anchor" href="#how-to-specify-body-content-in-a-post" aria-hidden="true"><span class="octicon octicon-link"></span></a>How to specify body content in a post</h4>
+
+<p>Body content is specified as a special parameter in swagger. So you need to create a parameter in your swagger spec comment as "body", for example</p>
+
+<pre><code>###  
+#  parameters:
+#    - name: body
+#      schema:
+#        $ref: '#/definitions/com.iheart.api.Track'
+###
+POST   /tracks       controller.Api.createTrack()
+</code></pre>
+
+<p>Again, play-swagger will generate the definition for com.iheart.api.Track case class</p>
+
+<h4>
+<a id="how-to-find-more-examples" class="anchor" href="#how-to-find-more-examples" aria-hidden="true"><span class="octicon octicon-link"></span></a>How to find more examples?</h4>
+
+<p>In the tests!
+/test/scala/com.iheart.playSwagger/SwaggerSpecGeneratorSpec.scala</p>
+
+<h1></h1>
+
+<h2>
+<a id="installation" class="anchor" href="#installation" aria-hidden="true"><span class="octicon octicon-link"></span></a>Installation</h2>
+
+<p>In short you need to create a controller that uses the library to generate the swagger spec and make it available as an endpoint.
+Then you just need to have a swagger UI instance to consumer that swagger spec. </p>
+
+<h4>
+<a id="step-1" class="anchor" href="#step-1" aria-hidden="true"><span class="octicon octicon-link"></span></a>Step 1</h4>
+
+<p>add Swagger API dependency to your sbt</p>
+
+<div class="highlight highlight-source-scala"><pre>resolvers <span class="pl-k">+</span><span class="pl-k">=</span> <span class="pl-en">Resolver</span>.jcenterRepo
+
+libraryDependencies <span class="pl-k">+</span><span class="pl-k">=</span>  <span class="pl-s"><span class="pl-pds">"</span>com.iheart<span class="pl-pds">"</span></span> <span class="pl-k">%%</span> <span class="pl-s"><span class="pl-pds">"</span>play-swagger<span class="pl-pds">"</span></span> <span class="pl-k">%</span> <span class="pl-s"><span class="pl-pds">"</span>0.1.1-RELEASE<span class="pl-pds">"</span></span></pre></div>
+
+<h4>
+<a id="step-2" class="anchor" href="#step-2" aria-hidden="true"><span class="octicon octicon-link"></span></a>Step 2</h4>
+
+<p>add a controller to your Play app that serves the swagger spec</p>
+
+<div class="highlight highlight-source-scala"><pre>
+<span class="pl-k">class</span> <span class="pl-en">ApiSpecs</span> <span class="pl-k">@</span><span class="pl-en">Inject</span>() (<span class="pl-v">router</span>: <span class="pl-en">Router</span>, <span class="pl-v">cached</span>: <span class="pl-en">Cached</span>) <span class="pl-k">extends</span> <span class="pl-e">Controller</span> {
+  <span class="pl-k">implicit</span> <span class="pl-k">val</span> <span class="pl-en">cl</span> <span class="pl-k">=</span> getClass.getClassLoader
+
+  <span class="pl-c">// The root package of your domain classes, PlaySwagger will automatically generate definitions when it encounters class references in this package.</span>
+  <span class="pl-c">// In our case it would be "com.iheart"</span>
+  <span class="pl-k">val</span> <span class="pl-en">domainPackage</span> <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">"</span>YOUR.DOMAIN.PACKAGE<span class="pl-pds">"</span></span>  
+  <span class="pl-k">private</span> <span class="pl-k">lazy</span> <span class="pl-k">val</span> <span class="pl-en">generator</span> <span class="pl-k">=</span> <span class="pl-en">SwaggerSpecGenerator</span>(domainPackage)   
+
+  <span class="pl-k">def</span> <span class="pl-en">specs</span> <span class="pl-k">=</span> cached(<span class="pl-s"><span class="pl-pds">"</span>swaggerDef<span class="pl-pds">"</span></span>) {
+    <span class="pl-en">Action</span> { _ <span class="pl-k">⇒</span>
+      <span class="pl-en">Ok</span>(generator.generate(router.documentation))
+    }
+  }
+
+}</pre></div>
+
+<h4>
+<a id="step-3" class="anchor" href="#step-3" aria-hidden="true"><span class="octicon octicon-link"></span></a>Step 3</h4>
+
+<p>add an end point to the routes file </p>
+
+<pre><code>###
+# summary: swagger definition
+# description: for swagger UI to consume
+###
+GET   /docs/swagger.json         @controllers.swagger.ApiSpecs.specs
+
+</code></pre>
+
+<h4>
+<a id="step-4" class="anchor" href="#step-4" aria-hidden="true"><span class="octicon octicon-link"></span></a>Step 4</h4>
+
+<p>Add a base swagger.yml (or swagger.json) to your resources folder. This one needs to provide all the required fields according to swagger spec
+E.g.</p>
+
+<div class="highlight highlight-source-yaml"><pre><span class="pl-s">-<span class="pl-s">--</span></span>
+  <span class="pl-s"><span class="pl-ent">swagger:</span> <span class="pl-s"><span class="pl-pds">"</span>2.0<span class="pl-pds">"</span></span></span>
+  <span class="pl-s"><span class="pl-ent">info:</span> </span>
+    <span class="pl-s"><span class="pl-ent">title:</span> <span class="pl-s"><span class="pl-pds">"</span>Poweramp API<span class="pl-pds">"</span></span></span>
+    <span class="pl-s"><span class="pl-ent">description:</span> <span class="pl-s"><span class="pl-pds">"</span>Power your music<span class="pl-pds">"</span></span></span>
+    <span class="pl-s"><span class="pl-ent">version:</span> <span class="pl-s"><span class="pl-pds">"</span>1.0.0<span class="pl-pds">"</span></span></span>
+  <span class="pl-s"><span class="pl-ent">host:</span> <span class="pl-s">api2.iheart.com</span></span>
+  <span class="pl-s"><span class="pl-ent">schemes:</span></span>
+    <span class="pl-s">- <span class="pl-s"><span class="pl-pds">"</span>https<span class="pl-pds">"</span></span></span>
+  <span class="pl-s"><span class="pl-ent">consumes:</span></span>
+    <span class="pl-s">- <span class="pl-s">application/json</span></span>
+  <span class="pl-s"><span class="pl-ent">produces:</span> </span>
+    <span class="pl-s">- <span class="pl-s">application/json</span></span>
+</pre></div>
+
+<h4>
+<a id="step-5a" class="anchor" href="#step-5a" aria-hidden="true"><span class="octicon octicon-link"></span></a>Step 5a</h4>
+
+<p>Deploy a swagger ui and point to the swagger spec end point, or</p>
+
+<h4>
+<a id="step-5b" class="anchor" href="#step-5b" aria-hidden="true"><span class="octicon octicon-link"></span></a>Step 5b</h4>
+
+<p>Alternatively you can use swagger-ui webjar and have you play app serving the swagger ui:</p>
+
+<p>Add the following dependency</p>
+
+<div class="highlight highlight-source-scala"><pre>libraryDependencies <span class="pl-k">+</span><span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">"</span>org.webjars<span class="pl-pds">"</span></span> <span class="pl-k">%</span> <span class="pl-s"><span class="pl-pds">"</span>swagger-ui<span class="pl-pds">"</span></span> <span class="pl-k">%</span> <span class="pl-s"><span class="pl-pds">"</span>2.1.2<span class="pl-pds">"</span></span></pre></div>
+
+<p>Add the following to your route file</p>
+
+<pre><code>### NoDocs ###
+GET   /docs/swagger-ui/*file        controllers.Assets.at(path:String="/public/lib/swagger-ui", file:String)
+
+</code></pre>
+
+<p>Then you should be able to open the swagger ui at
+http://localhost:9000/docs/swagger-ui/index.html?url=/docs/swagger.json</p>
+        </section>
+
+        <aside id="sidebar">
+          <a href="https://github.com/iheartradio/play-swagger/zipball/master" class="button">
+            <small>Download</small>
+            .zip file
+          </a>
+          <a href="https://github.com/iheartradio/play-swagger/tarball/master" class="button">
+            <small>Download</small>
+            .tar.gz file
+          </a>
+
+          <p class="repo-owner"><a href="https://github.com/iheartradio/play-swagger"></a> is maintained by <a href="https://github.com/iheartradio">iheartradio</a>.</p>
+
+          <p>This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the Architect theme by <a href="https://twitter.com/jasonlong">Jason Long</a>.</p>
+        </aside>
+      </div>
+    </div>
+
+  
+  </body>
+</html>
